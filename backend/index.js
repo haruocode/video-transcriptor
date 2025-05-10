@@ -21,15 +21,24 @@ app.post('/api/convert', async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'URL is required' });
 
-  const filename = `audio_${Date.now()}.mp3`;
-  const outputPath = path.join(uploadDir, filename);
-  const command = `yt-dlp -x --audio-format mp3 -o '${outputPath}' '${url}'`;
-
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-      return res.status(500).json({ error: '変換に失敗しました', details: stderr });
+  // yt-dlpでタイトル取得
+  const getTitleCmd = `yt-dlp --get-title --no-playlist --no-warnings '${url}'`;
+  exec(getTitleCmd, (titleErr, titleStdout, titleStderr) => {
+    if (titleErr) {
+      return res.status(500).json({ error: 'タイトル取得に失敗しました', details: titleStderr });
     }
-    res.json({ filename });
+    let title = titleStdout.trim().replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, '_').slice(0, 80);
+    if (!title) title = `audio_${Date.now()}`;
+    const filename = `${title}.mp3`;
+    const outputPath = path.join(uploadDir, filename);
+    const command = `yt-dlp -x --audio-format mp3 -o '${outputPath}' '${url}'`;
+
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        return res.status(500).json({ error: '変換に失敗しました', details: stderr });
+      }
+      res.json({ filename });
+    });
   });
 });
 
