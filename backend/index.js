@@ -69,6 +69,10 @@ app.get('/api/download/:filename', (req, res) => {
   res.download(filePath);
 });
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
+}
+
+module.exports = app;

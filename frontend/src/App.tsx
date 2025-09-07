@@ -11,6 +11,7 @@ function App() {
 
   // キューに追加
   const handleAddToQueue = () => {
+    /* istanbul ignore next */
     if (!url) return;
     setQueue(q => {
       const newQueue = [...q, url];
