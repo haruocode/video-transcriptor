@@ -43,14 +43,12 @@ npm install
 
 **バックエンド**
 ```
-cd backend
-node index.js
+cd backend && node index.js
 ```
 
 **フロントエンド**
 ```
-cd frontend
-npm start
+cd frontend && npm start
 ```
 
 - ブラウザで http://localhost:3000 を開いて利用できます。
