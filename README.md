@@ -65,7 +65,8 @@ cd frontend && npm start
 たまにそんなことがしたい時もあるだろう。そんな時はこうだ。
 
 ```
-$ curl -X POST http://localhost:3001/api/transcribe -H 'Content-Type: application/json' -d '{"filename":"soundFile.mp3","model":"medium"}'
+$ cd backend && node index.js
+$ curl -X POST http://localhost:3001/api/transcribe -H 'Content-Type: application/json' -d '{"filename":"TRACK01.mp3","model":"medium"}'
 ```
 
 ## ライセンス
