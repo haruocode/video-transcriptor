@@ -64,6 +64,12 @@ cd frontend && npm start
 
 たまにそんなことがしたい時もあるだろう。そんな時はこうだ。
 
+ちな、WAV ファイルを MP3 ファイルに変換するのはこうだ。
+
+```
+ffmpeg -i TRACK01.wav TRACK01.mp3
+```
+
 ```
 $ cd backend && node index.js
 $ curl -X POST http://localhost:3001/api/transcribe -H 'Content-Type: application/json' -d '{"filename":"TRACK01.mp3","model":"medium"}'
