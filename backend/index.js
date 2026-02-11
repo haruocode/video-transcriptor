@@ -6,7 +6,7 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
@@ -61,9 +61,10 @@ app.post("/api/transcribe", async (req, res) => {
 
   const transcriptionFile = path.join(
     transcriptionDir,
-    filename.replace(/\.mp3$/, ".txt")
+    filename.replace(/\.mp3$/, ".txt"),
   );
-  const normalizedModel = (requestedModel || "medium").toLowerCase();
+  const defaultModel = process.env.DEFAULT_MODEL || "medium";
+  const normalizedModel = (requestedModel || defaultModel).toLowerCase();
   const model = allowedModels.includes(normalizedModel)
     ? normalizedModel
     : "medium";
