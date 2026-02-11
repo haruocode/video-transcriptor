@@ -33,9 +33,8 @@ function App() {
       setError("");
       const currentUrl = queue[0];
       try {
-        `${API_BASE_URL}/api/convert`;
         // 変換
-        const res1 = await fetch("http://localhost:3001/api/convert", {
+        const res1 = await fetch(`${API_BASE_URL}/api/convert`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: currentUrl }),
