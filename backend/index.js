@@ -24,7 +24,8 @@ app.post("/api/convert", async (req, res) => {
 
   // yt-dlpでタイトル取得
   // User-Agentを追加してBot判定を回避試行
-  const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+  const userAgent =
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
   const getTitleCmd = `yt-dlp --user-agent "${userAgent}" --get-title --no-playlist --no-warnings '${url}'`;
   exec(getTitleCmd, (titleErr, titleStdout, titleStderr) => {
     if (titleErr) {
@@ -38,9 +39,9 @@ app.post("/api/convert", async (req, res) => {
       .replace(/\s+/g, "_")
       .slice(0, 80);
     if (!title) title = `audio_${Date.now()}`;
-    const filename = `${title-user-agent "${userAgent}" -}.mp3`;
+    const filename = `${title}.mp3`;
     const outputPath = path.join(uploadDir, filename);
-    const command = `yt-dlp -x --audio-format mp3 -o '${outputPath}' '${url}'`;
+    const command = `yt-dlp --user-agent "${userAgent}" -x --audio-format mp3 -o '${outputPath}' '${url}'`;
 
     exec(command, (error, stdout, stderr) => {
       if (error) {
