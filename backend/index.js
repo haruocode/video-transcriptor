@@ -4,6 +4,20 @@ const multer = require("multer");
 const { exec } = require("child_process");
 const path = require("path");
 const fs = require("fs");
+const { Queue } = require("bullmq");
+const Redis = require("ioredis");
+
+// Workerを起動
+require("./worker");
+
+const connection = new Redis(
+  process.env.REDIS_URL || "redis://localhost:6379",
+  {
+    maxRetriesPerRequest: null,
+  },
+);
+
+const transcriptionQueue = new Queue("transcriptionQueue", { connection });
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -16,6 +30,50 @@ const transcriptionDir = path.join(__dirname, "transcriptions");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 if (!fs.existsSync(transcriptionDir)) fs.mkdirSync(transcriptionDir);
 const allowedModels = ["tiny", "base", "small", "medium", "large"];
+
+// --- Queue Endpoints ---
+
+app.post("/api/queue", async (req, res) => {
+  const { url, model } = req.body;
+  if (!url) return res.status(400).json({ error: "URL is required" });
+
+  const job = await transcriptionQueue.add("transcribe", {
+    url,
+    model: model || "small",
+  });
+
+  res.json({ id: job.id, name: job.name, data: job.data });
+});
+
+app.get("/api/queue", async (req, res) => {
+  const jobs = await transcriptionQueue.getJobs([
+    "waiting",
+    "active",
+    "completed",
+    "failed",
+  ]);
+  const result = jobs.map((job) => ({
+    id: job.id,
+    status: job.finishedOn
+      ? "completed"
+      : job.failedReason
+        ? "failed"
+        : "pending/active",
+    returnvalue: job.returnvalue,
+    failedReason: job.failedReason,
+    data: job.data,
+  }));
+  res.json(result);
+});
+
+app.get("/api/queue/clean", async (req, res) => {
+  // 完了・失敗したジョブを掃除する
+  await transcriptionQueue.clean(0, 1000, "completed");
+  await transcriptionQueue.clean(0, 1000, "failed");
+  res.json({ message: "Cleaned" });
+});
+
+// --- End Queue Endpoints ---
 
 // YouTube動画をMP3に変換するエンドポイント
 app.post("/api/convert", async (req, res) => {
