@@ -13,9 +13,24 @@ const connection = new Redis(
 
 const uploadDir = path.join(__dirname, "uploads");
 const transcriptionDir = path.join(__dirname, "transcriptions");
+const logDir = path.join(__dirname, "logs");
 
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 if (!fs.existsSync(transcriptionDir)) fs.mkdirSync(transcriptionDir);
+if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
+
+const logFile = path.join(logDir, "worker.log");
+
+const appendLog = (msg) => {
+  const timestamp = new Date().toISOString();
+  const logLine = `[${timestamp}] ${msg}\n`;
+  try {
+    fs.appendFileSync(logFile, logLine);
+  } catch (e) {
+    console.error("Failed to write log file:", e);
+  }
+  console.log(msg);
+};
 
 const execPromise = (command) => {
   return new Promise((resolve, reject) => {
@@ -33,11 +48,16 @@ const worker = new Worker(
   "transcriptionQueue",
   async (job) => {
     const { url, model = "small" } = job.data;
-    job.log(`Processing URL: ${url} with model: ${model}`);
+    const log = (msg) => {
+      job.log(msg);
+      appendLog(`[Job ${job.id}] ${msg}`);
+    };
+
+    log(`Processing URL: ${url} with model: ${model}`);
 
     try {
       // 1. タイトル取得
-      job.log("Fetching title...");
+      log("Fetching title...");
       const userAgent =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
       const getTitleCmd = `yt-dlp --user-agent "${userAgent}" --get-title --no-playlist --no-warnings '${url}'`;
@@ -55,12 +75,12 @@ const worker = new Worker(
       const outputPath = path.join(uploadDir, filename);
 
       // 2. ダウンロード
-      job.log(`Downloading to ${filename}...`);
+      log(`Downloading to ${filename}...`);
       const downloadCmd = `yt-dlp --user-agent "${userAgent}" -x --audio-format mp3 -o '${outputPath}' '${url}'`;
       await execPromise(downloadCmd);
 
       // 3. 書き起こし
-      job.log(`Transcribing with model ${model}...`);
+      log(`Transcribing with model ${model}...`);
       const transcriptionTxtFilename = filename.replace(/\.mp3$/, ".txt");
       const transcriptionPath = path.join(
         transcriptionDir,
@@ -72,13 +92,14 @@ const worker = new Worker(
 
       fs.writeFileSync(transcriptionPath, transcribeOutput);
 
-      job.log("Done!");
+      log("Done!");
       return {
         filename: transcriptionTxtFilename,
         textPreview: transcribeOutput.substring(0, 100),
       };
     } catch (err) {
-      job.log(`Error: ${err.message || JSON.stringify(err)}`);
+      const errMsg = err.message || JSON.stringify(err);
+      log(`Error: ${errMsg}`);
       throw err;
     }
   },
@@ -86,11 +107,11 @@ const worker = new Worker(
 );
 
 worker.on("completed", (job) => {
-  console.log(`Job ${job.id} completed!`);
+  appendLog(`Job ${job.id} completed!`);
 });
 
 worker.on("failed", (job, err) => {
-  console.log(`Job ${job.id} failed with ${err.message}`);
+  appendLog(`Job ${job.id} failed with ${err.message}`);
 });
 
 module.exports = worker;

@@ -6,6 +6,7 @@ services:
     volumes:
       - ./backend/transcriptions:/app/transcriptions
       - ./backend/uploads:/app/uploads
+      - ./backend/logs:/app/logs
     environment:
       - REDIS_URL=redis://redis:6379
     depends_on:

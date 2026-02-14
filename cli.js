@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+const { spawn } = require("child_process");
+const path = require("path");
+
 const API_URL = "http://localhost:3001/api";
 
 async function addJob(url, model) {
@@ -56,6 +59,21 @@ async function cleanJobs() {
   }
 }
 
+function showLogs() {
+  const logPath = path.join(__dirname, "backend", "logs", "worker.log");
+  console.log(`Tailing logs from ${logPath}...`);
+  const fs = require("fs");
+  if (!fs.existsSync(logPath)) {
+    console.log("Log file not found. Waiting for logs to appear...");
+  }
+
+  const tail = spawn("tail", ["-f", logPath], { stdio: "inherit" });
+
+  tail.on("error", (err) => {
+    console.error("Failed to start tail process:", err);
+  });
+}
+
 const [, , command, arg1, arg2] = process.argv;
 
 switch (command) {
@@ -73,10 +91,14 @@ switch (command) {
   case "clean":
     cleanJobs();
     break;
+  case "logs":
+    showLogs();
+    break;
   default:
     console.log("Usage:");
     console.log("  node cli.js add <url> [model]  - Add a video to queue");
     console.log("  node cli.js list               - Show queue status");
+    console.log("  node cli.js logs               - Watch worker logs");
     console.log(
       "  node cli.js clean              - Remove completed/failed jobs",
     );
