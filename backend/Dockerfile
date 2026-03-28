@@ -16,8 +16,7 @@ WORKDIR /app
 
 # Install Python dependencies
 # Using break-system-packages because we are in a container environment
-RUN pip3 install torch --index-url https://download.pytorch.org/whl/cpu --break-system-packages
-RUN pip3 install openai-whisper --break-system-packages
+RUN pip3 install whisper-ctranslate2 --break-system-packages
 
 # Copy and install Node dependencies
 COPY package*.json ./

@@ -47,7 +47,7 @@ const execPromise = (command) => {
 const worker = new Worker(
   "transcriptionQueue",
   async (job) => {
-    const { url, model = "small" } = job.data;
+    const { url, model = "large-v3-turbo" } = job.data;
     const log = (msg) => {
       job.log(msg);
       appendLog(`[Job ${job.id}] ${msg}`);
@@ -87,10 +87,9 @@ const worker = new Worker(
         transcriptionTxtFilename,
       );
 
-      const transcribeCmd = `python3 whisper_transcribe.py '${outputPath}' '${model}'`;
-      const transcribeOutput = await execPromise(transcribeCmd);
-
-      fs.writeFileSync(transcriptionPath, transcribeOutput);
+      const transcribeCmd = `whisper-ctranslate2 '${outputPath}' --model ${model} --language ja --task transcribe --output_format txt --verbose False --output_dir '${transcriptionDir}'`;
+      await execPromise(transcribeCmd);
+      const transcribeOutput = fs.readFileSync(transcriptionPath, "utf-8");
 
       log("Done!");
       return {
