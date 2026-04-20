@@ -47,7 +47,8 @@ const execPromise = (command) => {
 const worker = new Worker(
   "transcriptionQueue",
   async (job) => {
-    const { url, model = "large-v3-turbo" } = job.data;
+    const { url } = job.data;
+    const model = "large-v3-turbo";
     const log = (msg) => {
       job.log(msg);
       appendLog(`[Job ${job.id}] ${msg}`);

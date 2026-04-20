@@ -1,49 +1,38 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `backend/` — Express API and Whisper bridge.
-  - `index.js` (routes: convert, transcribe, download)
-  - `whisper_transcribe.py` (loads Whisper `small` and transcribes)
-  - `uploads/` input MP3s, `transcriptions/` output `.txt` (do not commit)
-- `frontend/` — React + TypeScript UI (CRA).
-  - `src/` app code, tests near components (`*.test.tsx`)
+- `index.js` — Express API (queue endpoints: `/api/queue`, `/api/queue/clean`)
+- `worker.js` — BullMQ worker; downloads via `yt-dlp`, transcribes via `whisper-ctranslate2` (`large-v3-turbo` 固定)
+- `cli.js` — CLIツール (`add`, `list`, `logs`, `clean`)
+- `uploads/` — 入力MP3（コミット不可）
+- `transcriptions/` — 出力`.txt`（コミット不可）
+- `logs/` — ワーカーログ（コミット不可）
 
-## Build, Test, and Development Commands
-- Prereqs: Node 18+, Python 3.9+, `yt-dlp`, `pip install openai-whisper torch`.
-- Backend
-  - `cd backend && npm install`
-  - `node index.js` — starts API on `http://localhost:3001`
-  - Tests (if present): `npx jest`
-- Frontend
-  - `cd frontend && npm install`
-  - `npm start` — dev server at `http://localhost:3000`
-  - `npm run build` — production build to `frontend/build`
-  - `npm test` — watch tests
+## Build & Development Commands
+- 前提: Node 18+, Python 3.9+, `yt-dlp`, `whisper-ctranslate2`, Redis
+- `npm install` — 依存パッケージのインストール
+- `redis-server` — Redis起動
+- `node index.js` — APIサーバー起動 (`http://localhost:3001`)
+- または `docker-compose up`
 
-## Coding Style & Naming Conventions
-- Indentation: 2 spaces; single quotes; end lines with semicolons.
-- TypeScript in frontend; prefer explicit props/types.
-- Naming: `camelCase` for variables/functions, `PascalCase` for React components, `kebab-case` for file names in UI.
-- Linting: CRA’s default ESLint config is used in `frontend` (runs with `react-scripts`).
+## CLI の使い方
+```
+node cli.js add <url>   # ジョブ追加
+node cli.js list        # キュー確認
+node cli.js logs        # ワーカーログ表示
+node cli.js clean       # 完了・失敗ジョブ削除
+```
 
-## Testing Guidelines
-- Frontend: Jest + React Testing Library.
-  - Place tests as `ComponentName.test.tsx` next to the component.
-  - Test user-visible behavior; avoid implementation details.
-- Backend: Jest + Supertest recommended.
-  - Place tests under `backend/__tests__/` or `*.test.js`.
-  - Mock external processes (`yt-dlp`, Whisper) to keep tests fast.
+## Coding Style
+- インデント: スペース2つ、シングルクォート、セミコロンあり
+- `camelCase` for variables/functions
 
-## Commit & Pull Request Guidelines
-- Use concise, imperative commits; Conventional Commits are encouraged:
-  - `feat: add queueing for multiple URLs`
-  - `fix(api): handle missing mp3 file`
-- PRs should include:
-  - Clear description, reproduction/validation steps, and linked issues.
-  - Screenshots for UI changes; sample URLs used for testing.
-  - No large binaries; exclude `backend/uploads/` and `backend/transcriptions/`.
+## Commit Guidelines
+- 簡潔な命令形コミット（Conventional Commits 推奨）:
+  - `feat: add queue retry logic`
+  - `fix: handle yt-dlp timeout`
+- `uploads/`, `transcriptions/`, `logs/` はコミットしない
 
-## Security & Configuration Tips
-- The API shells out to `yt-dlp` and Python; never pass unvalidated arbitrary flags.
-- Ports: UI `3000`, API `3001`. Adjust CORS if deploying beyond localhost.
-- Do not commit model files or downloaded media; keep them local.
+## Security
+- `yt-dlp` と `whisper-ctranslate2` へのシェルアウトあり。未検証の入力をフラグとして渡さないこと。
+- モデルファイルやダウンロードメディアはコミットしない。

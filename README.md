@@ -54,7 +54,7 @@ docker-compose up
 
 ```bash
 # YouTube URLをキューに追加
-node cli.js add <url> [model]
+node cli.js add <url>
 
 # キューの状態を確認
 node cli.js list
@@ -65,8 +65,6 @@ node cli.js logs
 # 完了・失敗済みジョブを削除
 node cli.js clean
 ```
-
-`model` には `tiny` / `base` / `small` / `medium` / `large` が指定できます（デフォルト: `small`）。
 
 
 ## ライセンス

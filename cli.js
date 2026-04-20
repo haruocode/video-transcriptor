@@ -5,12 +5,12 @@ const path = require("path");
 
 const API_URL = "http://localhost:3001/api";
 
-async function addJob(url, model) {
+async function addJob(url) {
   try {
     const res = await fetch(`${API_URL}/queue`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, model }),
+      body: JSON.stringify({ url }),
     });
     const data = await res.json();
     if (res.ok) {
@@ -74,14 +74,14 @@ function showLogs() {
   });
 }
 
-const [, , command, arg1, arg2] = process.argv;
+const [, , command, arg1] = process.argv;
 
 switch (command) {
   case "add":
     if (!arg1) {
-      console.error("Usage: node cli.js add <url> [model]");
+      console.error("Usage: node cli.js add <url>");
     } else {
-      addJob(arg1, arg2);
+      addJob(arg1);
     }
     break;
   case "list":
@@ -96,7 +96,7 @@ switch (command) {
     break;
   default:
     console.log("Usage:");
-    console.log("  node cli.js add <url> [model]  - Add a video to queue");
+    console.log("  node cli.js add <url>  - Add a video to queue");
     console.log("  node cli.js list               - Show queue status");
     console.log("  node cli.js logs               - Watch worker logs");
     console.log(

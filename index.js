@@ -22,13 +22,10 @@ app.use(express.json());
 // --- Queue Endpoints ---
 
 app.post("/api/queue", async (req, res) => {
-  const { url, model } = req.body;
+  const { url } = req.body;
   if (!url) return res.status(400).json({ error: "URL is required" });
 
-  const job = await transcriptionQueue.add("transcribe", {
-    url,
-    model: model || "small",
-  });
+  const job = await transcriptionQueue.add("transcribe", { url });
 
   res.json({ id: job.id, name: job.name, data: job.data });
 });
