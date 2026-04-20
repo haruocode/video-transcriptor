@@ -60,7 +60,7 @@ async function cleanJobs() {
 }
 
 function showLogs() {
-  const logPath = path.join(__dirname, "backend", "logs", "worker.log");
+  const logPath = path.join(__dirname, "logs", "worker.log");
   console.log(`Tailing logs from ${logPath}...`);
   const fs = require("fs");
   if (!fs.existsSync(logPath)) {

@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "video-transcriptor",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,6 @@
   "description": "",
   "dependencies": {
     "bullmq": "^5.69.1",
-    "cors": "^2.8.5",
     "express": "^5.1.0",
     "ioredis": "^5.9.3",
     "multer": "^1.4.5-lts.2",

@@ -1,5 +1,4 @@
 const express = require("express");
-const cors = require("cors");
 const multer = require("multer");
 const { exec } = require("child_process");
 const path = require("path");
@@ -22,7 +21,6 @@ const transcriptionQueue = new Queue("transcriptionQueue", { connection });
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(cors());
 app.use(express.json());
 
 const uploadDir = path.join(__dirname, "uploads");

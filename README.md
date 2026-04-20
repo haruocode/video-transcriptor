@@ -1,96 +1,98 @@
 # YouTube 書き起こしツール
 
-YouTube 動画の URL を入力するだけで、音声を Whisper で自動書き起こしし、テキストファイルとしてダウンロードできる Web アプリです。
+YouTube 動画の URL を入力するだけで、音声を Whisper で自動書き起こしし、テキストファイルとして保存できる CLI ツールです。
 
 ## 主な機能
 
-- YouTube の URL を複数キューに追加し、順次自動で書き起こし
-- Whisper（OpenAI）による高精度な音声認識（small モデル）
-- 書き起こし結果のテキストファイルをダウンロード
-- ダークモード対応のモダンな UI
+- YouTube の URL をキューに追加し、順次自動で書き起こし
+- whisper-ctranslate2 による高精度な音声認識
+- 書き起こし結果をテキストファイルとして保存
+- CLI でジョブの追加・一覧・ログ確認が可能
 
 ## ディレクトリ構成
 
 ```
 backend/   # Node.js (Express) + Python(Whisper) バックエンド
-frontend/  # React フロントエンド
+cli.js     # CLIツール
 ```
 
 ## セットアップ手順
 
-### 1. Whisper・yt-dlp のインストール
+### 1. 依存ツールのインストール
 
-- Python3, pip, Node.js, npm が必要です。
-- Whisper, torch, yt-dlp をインストールしてください。
+Python3, Node.js, npm, Redis が必要です。
 
+```bash
+pip3 install whisper-ctranslate2 torch --break-system-packages
+brew install yt-dlp redis
 ```
-pip3 install openai-whisper torch --break-system-packages
-brew install yt-dlp  # または sudo apt install yt-dlp
-```
 
-### 2. バックエンドのセットアップ
+### 2. 依存パッケージのインストール
 
-```
-cd backend
+```bash
 npm install
 ```
 
-### 3. フロントエンドのセットアップ
+### 3. 起動
 
-```
-cd ../frontend
-npm install
-```
+```bash
+# Redis を起動（別ターミナル）
+redis-server
 
-### 4. サーバーの起動
-
-- 別々のターミナルで以下を実行してください。
-
-**バックエンド**
-
-```
-cd backend && node index.js
+# サーバーを起動
+node index.js
 ```
 
-**フロントエンド**
+または Docker Compose を使う場合:
 
+```bash
+docker-compose up
 ```
-cd frontend && npm start
+
+## CLI の使い方
+
+```bash
+# YouTube URLをキューに追加
+node cli.js add <url> [model]
+
+# キューの状態を確認
+node cli.js list
+
+# ワーカーのログをリアルタイム表示
+node cli.js logs
+
+# 完了・失敗済みジョブを削除
+node cli.js clean
 ```
 
-- ブラウザで http://localhost:3000 を開いて利用できます。
+`model` には `tiny` / `base` / `small` / `medium` / `large` が指定できます（デフォルト: `small`）。
 
-## MP3 ファイルを書き起こしファイルに変換する方法
+## MP3 ファイルを直接書き起こす
 
-たまにそんなことがしたい時もあるだろう。そんな時はこうだ。
+WAV → MP3 変換:
 
-ちな、WAV ファイルを MP3 ファイルに変換するのはこうだ。
-
-```
+```bash
 ffmpeg -i TRACK01.wav TRACK01.mp3
 ```
 
+バックエンド経由で書き起こし:
+
+```bash
+node index.js
+curl -X POST http://localhost:3001/api/transcribe \
+  -H 'Content-Type: application/json' \
+  -d '{"filename":"TRACK01.mp3","model":"medium"}'
 ```
-$ cd backend && node index.js
-$ curl -X POST http://localhost:3001/api/transcribe -H 'Content-Type: application/json' -d '{"filename":"TRACK01.mp3","model":"medium"}'
-```
 
-## クラウドへのデプロイ
-
-コスト重視で運用するための推奨構成（Cloud Run + Netlify）の手順です。
-
-### 1. Backend (Google Cloud Run)
+## クラウドへのデプロイ (Google Cloud Run)
 
 **前提**: `gcloud` コマンドがインストールされ、プロジェクトが作成されていること。
 
-1. **プロジェクト設定とAPI有効化**
+1. **プロジェクト設定と API 有効化**
 
    ```bash
-   # プロジェクトIDを設定
    gcloud config set project [YOUR_PROJECT_ID]
-   # 必要なAPIを有効化
    gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
-   # Docker認証の設定
    gcloud auth configure-docker us-central1-docker.pkg.dev
    ```
 
@@ -106,11 +108,8 @@ $ curl -X POST http://localhost:3001/api/transcribe -H 'Content-Type: applicatio
 3. **ビルド & デプロイ**
 
    ```bash
-   cd backend
-   # ビルド (時間がかかります)
    gcloud builds submit --tag us-central1-docker.pkg.dev/[YOUR_PROJECT_ID]/repo1/backend .
 
-   # デプロイ (コスト節約設定: メモリ2GB, タイムアウト60分, インスタンス数1)
    gcloud run deploy video-transcriptor-backend \
      --image us-central1-docker.pkg.dev/[YOUR_PROJECT_ID]/repo1/backend \
      --platform managed \
@@ -122,28 +121,12 @@ $ curl -X POST http://localhost:3001/api/transcribe -H 'Content-Type: applicatio
      --set-env-vars DEFAULT_MODEL=small
    ```
 
-   完了後に表示される **Service URL** (`https://...run.app`) を控えておきます。
-
-### 2. Frontend (Netlify)
-
-GitHub 連携で行うのが最も簡単です。
-
-1. GitHub にコードをプッシュし、Netlify で "Import from Git" を選択。
-2. **Build settings**:
-   - Base directory: `frontend`
-   - Build command: `npm run build`
-   - Publish directory: `frontend/build`
-3. **Environment variables** (重要):
-   - Key: `REACT_APP_API_URL`
-   - Value: `(Cloud RunのService URL)` ※末尾の `/` は含めない
-4. Deploy を実行。
-
 ---
 
 ### トラブルシューティング
 
-**Q. yt-dlp で "Sign in to confirm you’re not a bot" エラーが出る**
-A. データセンターのIPがブロックされています。`backend/index.js` で `User-Agent` を偽装する対策を入れていますが、それでも失敗する場合は Cookie をコンテナに渡す高度な対策が必要です。
+**Q. yt-dlp で "Sign in to confirm you're not a bot" エラーが出る**
+A. データセンターの IP がブロックされています。`backend/index.js` で `User-Agent` を偽装する対策を入れていますが、それでも失敗する場合は Cookie をコンテナに渡す高度な対策が必要です。
 
 **Q. Cloud Build が遅い**
 A. PyTorch のダウンロードに時間がかかるためです。頻繁にデプロイする場合は `--cache-from` オプションの利用を検討してください。

@@ -1,12 +1,12 @@
 services:
   backend:
-    build: ./backend
+    build: .
     ports:
       - "3001:3001"
     volumes:
-      - ./backend/transcriptions:/app/transcriptions
-      - ./backend/uploads:/app/uploads
-      - ./backend/logs:/app/logs
+      - ./transcriptions:/app/transcriptions
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
     environment:
       - REDIS_URL=redis://redis:6379
     depends_on:
