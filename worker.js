@@ -90,7 +90,9 @@ const worker = new Worker(
 
       const transcribeCmd = `whisper-ctranslate2 '${outputPath}' --model ${model} --language ja --task transcribe --output_format txt --verbose False --output_dir '${transcriptionDir}'`;
       await execPromise(transcribeCmd);
-      const transcribeOutput = fs.readFileSync(transcriptionPath, "utf-8");
+      const rawOutput = fs.readFileSync(transcriptionPath, "utf-8");
+      const transcribeOutput = rawOutput.replace(/\r?\n/g, "");
+      fs.writeFileSync(transcriptionPath, transcribeOutput, "utf-8");
 
       log("Done!");
       return {
