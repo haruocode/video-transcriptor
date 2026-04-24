@@ -67,7 +67,7 @@ const worker = new Worker(
 
       let title = titleStdout
         .trim()
-        .replace(/[\\/:*?"<>|]/g, "_")
+        .replace(/[\\/:*?"<>|']/g, "_")
         .replace(/\s+/g, "_")
         .slice(0, 80);
       if (!title) title = `audio_${Date.now()}`;
