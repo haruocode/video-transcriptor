@@ -34,3 +34,6 @@ venv/
 # App specific
 uploads/
 transcriptions/
+
+# for private
+my-books
